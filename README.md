@@ -20,9 +20,7 @@ import (
 func main() {
 
 	wtm := wtmfactor.NewWtmFactor(wtmfactor.WtmConfig{
-		URL:       "https://myweb.com",
-		FactorRow: ".form-row .py-1",
-		FactorCol: ".card",
+		URL: "https://myweb.com",
 	})
 
 	algorithms := wtm.GetFactor()
