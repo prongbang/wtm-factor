@@ -30,9 +30,7 @@ type Power struct {
 
 // WtmConfig config a url
 type WtmConfig struct {
-	URL       string
-	FactorRow string
-	FactorCol string
+	URL string
 }
 
 // WtmFactor is the interface
@@ -69,7 +67,7 @@ func (w *wtmFactor) GetFactor() []Algorithm {
 	}
 
 	algor := []Algorithm{}
-	doc.Find(w.Config.FactorRow).Each(func(i int, s *goquery.Selection) {
+	doc.Find(".form-row .py-1").Each(func(i int, s *goquery.Selection) {
 
 		algoName := strings.TrimSpace(s.Find("label.ck-button span.btn.btn-default.btn-block.mb-1").Text())
 		hr := s.Find("div.input-group.input-group-sm")
