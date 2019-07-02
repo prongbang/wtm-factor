@@ -1,6 +1,9 @@
 package wtmfactor
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -8,6 +11,39 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 )
+
+// ClientRequest is the interface
+type ClientRequest interface {
+	Get(url string) string
+	Core(url string, method string) *http.Response
+}
+
+type clientRequest struct {
+}
+
+func (c *clientRequest) Get(url string) string {
+	resp := c.Core(url, "GET")
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	return string(body)
+}
+
+func (c *clientRequest) Core(url string, method string) *http.Response {
+	req, err := http.NewRequest("GET", url, nil)
+	client := &http.Client{
+		Timeout: time.Second * 60,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	return resp
+}
+
+// NewClientRequest is new instance
+func NewClientRequest() ClientRequest {
+	return &clientRequest{}
+}
 
 // Algorithm is a model
 type Algorithm struct {
@@ -23,7 +59,8 @@ type WtmConfig struct {
 
 // WtmFactor is the interface
 type WtmFactor interface {
-	GetFactor() []Algorithm
+	GetFactorName() []Algorithm
+	GetFactorKey() map[string]interface{}
 }
 
 type wtmFactor struct {
@@ -37,15 +74,57 @@ func NewWtmFactor(config WtmConfig) WtmFactor {
 	}
 }
 
-func (w *wtmFactor) GetFactor() []Algorithm {
-	req, err := http.NewRequest("GET", w.Config.URL, nil)
-	client := &http.Client{
-		Timeout: time.Second * 60,
+func (w *wtmFactor) GetFactorKey() map[string]interface{} {
+	client := NewClientRequest()
+
+	html := client.Get(w.Config.URL)
+	assets := "/assets/application-"
+	prefixScript := fmt.Sprintf(`<script src="%s`, assets)
+	suffixScript := `.js"></script>`
+	prefixScriptIdx := strings.Index(html, prefixScript)
+	html = html[prefixScriptIdx+len(prefixScript):]
+	suffixScriptIdx := strings.Index(html, suffixScript)
+	hash := html[0:suffixScriptIdx]
+
+	jsURL := fmt.Sprintf("%s%s%s.js", w.Config.URL, assets, hash)
+	log.Println("GET -->", jsURL)
+
+	js := client.Get(jsURL)
+	prefix := `m={"#factor`
+	suffix := `r=Object.keys(v)`
+	prefixIdx := strings.Index(js, prefix)
+	js = js[prefixIdx:]
+	suffixIdx := strings.Index(js, suffix)
+	js = js[0:suffixIdx]
+
+	jsonData := ""
+	adapt := strings.Split(js, "},")
+	for i, a := range adapt {
+		aK := "={"
+		aIdx := strings.Index(a, aK)
+		if aIdx != -1 {
+			key := a[0:aIdx]
+			a = a[aIdx+len(aK):]
+			comma := ","
+			if i == len(adapt)-2 {
+				comma = ""
+			}
+			jsonData += fmt.Sprintf(`"%s":{%s}%s`, key, a, comma)
+		}
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
+	jsonData = strings.Replace(jsonData, ":.", ":0.", -1)
+	jsonData = fmt.Sprintf("{%s}", jsonData)
+
+	data := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(jsonData), &data); err != nil {
+		log.Println(err)
 	}
+	return data
+}
+
+func (w *wtmFactor) GetFactorName() []Algorithm {
+	client := NewClientRequest()
+	resp := client.Core(w.Config.URL, "GET")
 	defer resp.Body.Close()
 
 	// Load the HTML document

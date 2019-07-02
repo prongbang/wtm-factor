@@ -23,9 +23,11 @@ func main() {
 		URL: "https://myweb.com/",
 	})
 
-	algorithms := wtm.GetFactor()
+	algorithms := wtm.GetFactorName()
+	algorithmKey := wtm.GetFactorKey()
 
 	log.Println("algorithms -> ", algorithms)
+	log.Println("algorithmKey -> ", algorithmKey)
 }
 
 ```
