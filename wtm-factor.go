@@ -11,21 +11,9 @@ import (
 
 // Algorithm is a model
 type Algorithm struct {
-	Name     string `json:"name"`
-	Hashrate Hashrate
-	Power    Power
-}
-
-// Hashrate is a model
-type Hashrate struct {
-	Value string `json:"value"`
-	Unit  string `json:"unit"`
-}
-
-// Power is a model
-type Power struct {
-	Value string `json:"value"`
-	Unit  string `json:"unit"`
+	Name       string `json:"name"`
+	HashrateID string `json:"hashrate_id"`
+	PowerID    string `json:"power_id"`
 }
 
 // WtmConfig config a url
@@ -72,8 +60,8 @@ func (w *wtmFactor) GetFactor() []Algorithm {
 		algoName := strings.TrimSpace(s.Find("label.ck-button span.btn.btn-default.btn-block.mb-1").Text())
 		hr := s.Find("div.input-group.input-group-sm")
 
-		hashrate := Hashrate{}
-		power := Power{}
+		hashrateID := ""
+		powerID := ""
 
 		hr.Each(func(i int, s *goquery.Selection) {
 			if id, idEx := s.Find("input.form-control").Attr("id"); idEx {
@@ -82,26 +70,18 @@ func (w *wtmFactor) GetFactor() []Algorithm {
 				pPref := "factor_"
 				pSuff := "_p"
 
-				value, err := s.Find("input.form-control").Attr("value")
-				unit := strings.TrimSpace(hr.Find("span.input-group-text").Text())
-				if err {
-					value = strings.TrimSpace(value)
-				}
-
 				if strings.Contains(id, hrPref) && strings.Contains(id, hrSuff) {
-					hashrate.Value = value
-					hashrate.Unit = unit
+					hashrateID = id
 				} else if strings.Contains(id, pPref) && strings.Contains(id, pSuff) {
-					power.Value = value
-					power.Unit = unit
+					powerID = id
 				}
 			}
 		})
 
 		algor = append(algor, Algorithm{
-			Name:     algoName,
-			Hashrate: hashrate,
-			Power:    power,
+			Name:       algoName,
+			HashrateID: hashrateID,
+			PowerID:    powerID,
 		})
 	})
 
