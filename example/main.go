@@ -9,7 +9,7 @@ import (
 func main() {
 
 	wtm := wtmfactor.NewWtmFactor(wtmfactor.WtmConfig{
-		URL: "https://myweb.com/",
+		URL: "https://whattomine.com/",
 	})
 
 	algorithms := wtm.GetFactorName()

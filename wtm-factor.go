@@ -294,6 +294,7 @@ func (w *wtmFactor) GetFactory() map[string]Algorithm {
 		} else if strings.Contains(key, pPref) && strings.Contains(key, pSuff) {
 			algoKey := key[1 : len(key)-2]
 			alg := algorithms[algoKey]
+			alg.PowerValue = result
 			algorithms[algoKey] = alg
 		}
 
